@@ -1,0 +1,123 @@
+function updateDashboard(data) {
+    const distribution = data.distribution;
+    document.getElementById("date").textContent = distribution.date;
+    document.getElementById("planned").textContent = distribution.total_planned_hours;
+    document.getElementById("capacity").textContent = distribution.adjusted_capacity;
+
+    const statusElement = document.getElementById("status");
+    const status = distribution.status;
+    statusElement.textContent = status;
+    statusElement.classList.remove("status-balanced", "status-overloaded", "status-risk");
+    if (status === "BALANCED") {
+        statusElement.classList.add("status-balanced");
+    } else if (status === "OVERLOADED") {
+        statusElement.classList.add("status-overloaded");
+    } else {
+        statusElement.classList.add("status-risk");
+    }
+
+    const fatigueScore = data.fatigue.fatigue_score;
+    document.getElementById("fatigue").textContent = fatigueScore;
+    const fatigueFill = document.getElementById("fatigue-fill");
+    fatigueFill.style.width = fatigueScore + "%";
+    const fatigueLabel = document.getElementById("fatigue-label");
+    if (fatigueScore < 40) {
+        fatigueFill.style.background = "#28a745";
+        fatigueLabel.textContent = "Low Fatigue";
+        fatigueLabel.className = "fatigue-label fatigue-low";
+    } else if (fatigueScore < 70) {
+        fatigueFill.style.background = "#ffc107";
+        fatigueLabel.textContent = "Moderate Fatigue";
+        fatigueLabel.className = "fatigue-label fatigue-moderate";
+    } else {
+        fatigueFill.style.background = "#dc3545";
+        fatigueLabel.textContent = "High Fatigue";
+        fatigueLabel.className = "fatigue-label fatigue-high";
+    }
+
+    const recommendationsContainer = document.getElementById("recommendations");
+    recommendationsContainer.innerHTML = "";
+    data.recommendations.forEach(rec => {
+        const div = document.createElement("div");
+        div.className = "recommendation-card";
+        div.textContent = rec;
+        recommendationsContainer.appendChild(div);
+    });
+}
+
+function renderTaskList(tasks) {
+    const tbody = document.getElementById("task-list-body");
+    tbody.innerHTML = "";
+    tasks.forEach(task => {
+        const tr = document.createElement("tr");
+        const dueDate = task.due_date || "";
+        tr.innerHTML = `
+            <td>${escapeHtml(task.title)}</td>
+            <td>${task.planned_hours}</td>
+            <td>${task.difficulty}</td>
+            <td>${task.priority}</td>
+            <td>${escapeHtml(task.status || "pending")}</td>
+            <td>${escapeHtml(dueDate)}</td>
+            <td><button type="button" class="btn-delete" data-id="${task.id}">Delete</button></td>
+        `;
+        tr.querySelector(".btn-delete").addEventListener("click", () => deleteTask(task.id));
+        tbody.appendChild(tr);
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function loadTasks() {
+    fetch("/tasks")
+        .then(response => response.json())
+        .then(tasks => renderTaskList(tasks));
+}
+
+async function deleteTask(taskId) {
+    const res = await fetch(`/tasks/${taskId}`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) {
+        alert(data.error || "Failed to delete task");
+        return;
+    }
+    updateDashboard(data);
+    loadTasks();
+}
+
+fetch("/analyze")
+    .then(response => response.json())
+    .then(data => {
+        updateDashboard(data);
+        loadTasks();
+    });
+
+async function addTask() {
+    const name = document.getElementById("task-name").value;
+    const hours = document.getElementById("task-hours").value;
+    const difficulty = document.getElementById("task-difficulty").value;
+    const priority = document.getElementById("task-priority").value;
+
+    if (!name || !hours) {
+        alert("Please fill all required fields.");
+        return;
+    }
+
+    await fetch("/add-task", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: name,
+            estimated_hours: hours,
+            difficulty: difficulty,
+            priority: priority
+        })
+    });
+
+    location.reload();
+} 
