@@ -76,8 +76,27 @@
             </tbody>
         </table>
     </div>
+
+    <h2>Analytics</h2>
+    <div class="card">
+        <div class="analytics-grid">
+            <div class="chart-container">
+                <h3>Difficulty Distribution</h3>
+                <canvas id="difficultyChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Priority Distribution</h3>
+                <canvas id="priorityChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Task Status Distribution</h3>
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 
 </body>

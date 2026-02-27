@@ -103,7 +103,128 @@ function escapeHtml(text) {
 function loadTasks() {
     fetch("/tasks")
         .then(response => response.json())
-        .then(tasks => renderTaskList(tasks));
+        .then(tasks => {
+            renderTaskList(tasks);
+            loadAnalytics();
+        });
+}
+
+let difficultyChartInstance = null;
+let priorityChartInstance = null;
+let statusChartInstance = null;
+
+function loadAnalytics() {
+    fetch("/analytics")
+        .then(response => response.json())
+        .then(data => {
+            const difficultyCtx = document.getElementById("difficultyChart").getContext("2d");
+            const priorityCtx = document.getElementById("priorityChart").getContext("2d");
+            const statusCtx = document.getElementById("statusChart").getContext("2d");
+
+            if (difficultyChartInstance) {
+                difficultyChartInstance.destroy();
+            }
+            if (priorityChartInstance) {
+                priorityChartInstance.destroy();
+            }
+            if (statusChartInstance) {
+                statusChartInstance.destroy();
+            }
+
+            difficultyChartInstance = new Chart(difficultyCtx, {
+                type: "bar",
+                data: {
+                    labels: ["1", "2", "3", "4", "5"],
+                    datasets: [{
+                        label: "Tasks",
+                        data: [
+                            data.difficulty_distribution["1"],
+                            data.difficulty_distribution["2"],
+                            data.difficulty_distribution["3"],
+                            data.difficulty_distribution["4"],
+                            data.difficulty_distribution["5"],
+                        ],
+                        backgroundColor: "rgba(54, 162, 235, 0.6)",
+                        borderColor: "rgba(54, 162, 235, 1)",
+                        borderWidth: 1,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                            },
+                        },
+                    },
+                },
+            });
+
+            const priorityColors = [
+                "rgba(40, 167, 69, 0.7)",
+                "rgba(255, 193, 7, 0.7)",
+                "rgba(220, 53, 69, 0.7)",
+            ];
+
+            priorityChartInstance = new Chart(priorityCtx, {
+                type: "pie",
+                data: {
+                    labels: ["Priority 1", "Priority 2", "Priority 3+"],
+                    datasets: [{
+                        data: [
+                            data.priority_distribution["1"],
+                            data.priority_distribution["2"],
+                            data.priority_distribution["3"],
+                        ],
+                        backgroundColor: priorityColors,
+                        borderWidth: 1,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: "bottom",
+                        },
+                    },
+                },
+            });
+
+            const statusColors = [
+                "rgba(255, 193, 7, 0.7)",  // pending
+                "rgba(40, 167, 69, 0.7)",  // completed
+                "rgba(220, 53, 69, 0.7)",  // overdue
+            ];
+
+            statusChartInstance = new Chart(statusCtx, {
+                type: "doughnut",
+                data: {
+                    labels: ["Pending", "Completed", "Overdue"],
+                    datasets: [{
+                        data: [
+                            data.status_distribution.pending,
+                            data.status_distribution.completed,
+                            data.status_distribution.overdue,
+                        ],
+                        backgroundColor: statusColors,
+                        borderWidth: 1,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: "bottom",
+                        },
+                    },
+                },
+            });
+        });
 }
 
 async function deleteTask(taskId) {
@@ -146,7 +267,7 @@ async function addTask() {
         return;
     }
 
-    await fetch("/add-task", {
+    const res = await fetch("/add-task", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -159,5 +280,17 @@ async function addTask() {
         })
     });
 
-    location.reload();
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Failed to add task");
+        return;
+    }
+
+    // After creating a task, refresh dashboard and analytics without full reload
+    const analyzeRes = await fetch("/analyze");
+    if (analyzeRes.ok) {
+        const analyzeData = await analyzeRes.json();
+        updateDashboard(analyzeData);
+    }
+    loadTasks();
 } 

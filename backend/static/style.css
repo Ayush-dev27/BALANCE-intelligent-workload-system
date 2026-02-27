@@ -211,3 +211,13 @@ button:hover {
     color: #6c757d;
     text-decoration: line-through;
 }
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.chart-container {
+    min-height: 220px;
+}

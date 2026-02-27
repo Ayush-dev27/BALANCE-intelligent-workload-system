@@ -3,6 +3,7 @@ from backend.logic.fatigue import calculate_and_store_fatigue
 from backend.logic.recommendations import generate_recommendations 
 from flask import Flask, jsonify 
 from flask import request
+from datetime import date
 
 app = Flask(__name__) 
 
@@ -112,6 +113,58 @@ def complete_task_route(task_id):
         "distribution": result["distribution"],
         "fatigue": result["fatigue"],
         "recommendations": result["recommendations"]
+    })
+
+
+@app.route("/analytics", methods=["GET"])
+def analytics():
+    from backend.db import get_all_tasks
+
+    tasks = get_all_tasks()
+    today = date.today()
+
+    difficulty_distribution = {str(i): 0 for i in range(1, 6)}
+    priority_distribution = {str(i): 0 for i in range(1, 4)}
+    status_distribution = {"pending": 0, "completed": 0, "overdue": 0}
+
+    total_tasks = len(tasks)
+    completed_tasks = 0
+
+    for t in tasks:
+        diff = str(t.get("difficulty") or "")
+        if diff in difficulty_distribution:
+            difficulty_distribution[diff] += 1
+
+        prio_raw = t.get("priority")
+        if prio_raw is not None:
+            prio_bucket = min(int(prio_raw), 3)
+            priority_distribution[str(prio_bucket)] += 1
+
+        status = t.get("status") or "pending"
+        due_date = t.get("due_date")
+
+        is_overdue = (
+            due_date is not None
+            and hasattr(due_date, "toordinal")
+            and due_date < today
+            and status != "completed"
+        )
+
+        if status == "completed":
+            completed_tasks += 1
+            status_distribution["completed"] += 1
+        elif is_overdue:
+            status_distribution["overdue"] += 1
+        else:
+            # Treat non-completed, non-overdue (including in_progress) as pending bucket
+            status_distribution["pending"] += 1
+
+    return jsonify({
+        "difficulty_distribution": difficulty_distribution,
+        "priority_distribution": priority_distribution,
+        "status_distribution": status_distribution,
+        "total_tasks": total_tasks,
+        "completed_tasks": completed_tasks,
     })
 
 
