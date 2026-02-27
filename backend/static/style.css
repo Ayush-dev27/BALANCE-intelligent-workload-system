@@ -168,3 +168,46 @@ button:hover {
 .btn-delete:hover {
     background-color: #c82333;
 }
+
+.btn-complete {
+    padding: 6px 12px;
+    background-color: #28a745;
+    font-size: 13px;
+    margin-right: 6px;
+}
+
+.btn-complete[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-complete:hover:not([disabled]) {
+    background-color: #218838;
+}
+
+.task-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.task-status-pending {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.task-status-completed {
+    background-color: #28a745;
+}
+
+.task-status-overdue {
+    background-color: #dc3545;
+}
+
+.task-completed {
+    color: #6c757d;
+    text-decoration: line-through;
+}

@@ -56,8 +56,6 @@ def analyze():
     result = run_balance_engine()
     return jsonify(result)
 
-if __name__ == "__main__":
-    app.run(debug=True) 
 
 @app.route("/add-task", methods=["POST"])
 def add_task():
@@ -83,7 +81,7 @@ def list_tasks():
     tasks = get_all_tasks()
     for t in tasks:
         if t.get("due_date"):
-            t["due_date"] = t["due_date"].isoformat()
+            t["due_date"] = t["due_date"].isoformat() 
     return jsonify(tasks)
 
 
@@ -101,3 +99,21 @@ def delete_task_route(task_id):
         "recommendations": result["recommendations"]
     })
 
+
+@app.route("/tasks/<int:task_id>/complete", methods=["PUT"])
+def complete_task_route(task_id):
+    from backend.db import update_task_status
+    updated = update_task_status(task_id, "completed")
+    if not updated:
+        return jsonify({"error": "Task not found"}), 404
+    result = run_balance_engine()
+    return jsonify({
+        "message": "Task completed",
+        "distribution": result["distribution"],
+        "fatigue": result["fatigue"],
+        "recommendations": result["recommendations"]
+    })
+
+
+if __name__ == "__main__":
+    app.run(debug=True) 

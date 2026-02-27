@@ -51,15 +51,44 @@ function renderTaskList(tasks) {
     tasks.forEach(task => {
         const tr = document.createElement("tr");
         const dueDate = task.due_date || "";
+
+        const rawStatus = task.status || "pending";
+        let displayStatus = rawStatus;
+        let statusClass = "task-status-pending";
+
+        if (rawStatus === "completed") {
+            statusClass = "task-status-completed";
+            tr.classList.add("task-completed");
+        } else if (dueDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const due = new Date(dueDate);
+            due.setHours(0, 0, 0, 0);
+
+            if (due < today) {
+                displayStatus = "overdue";
+                statusClass = "task-status-overdue";
+            }
+        }
+
         tr.innerHTML = `
             <td>${escapeHtml(task.title)}</td>
             <td>${task.planned_hours}</td>
             <td>${task.difficulty}</td>
             <td>${task.priority}</td>
-            <td>${escapeHtml(task.status || "pending")}</td>
+            <td><span class="task-status-badge ${statusClass}">${escapeHtml(displayStatus)}</span></td>
             <td>${escapeHtml(dueDate)}</td>
-            <td><button type="button" class="btn-delete" data-id="${task.id}">Delete</button></td>
+            <td>
+                <button type="button" class="btn-complete" data-id="${task.id}" ${rawStatus === "completed" ? "disabled" : ""}>Complete</button>
+                <button type="button" class="btn-delete" data-id="${task.id}">Delete</button>
+            </td>
         `;
+
+        const completeBtn = tr.querySelector(".btn-complete");
+        if (completeBtn && !completeBtn.disabled) {
+            completeBtn.addEventListener("click", () => completeTask(task.id));
+        }
+
         tr.querySelector(".btn-delete").addEventListener("click", () => deleteTask(task.id));
         tbody.appendChild(tr);
     });
@@ -82,6 +111,17 @@ async function deleteTask(taskId) {
     const data = await res.json();
     if (!res.ok) {
         alert(data.error || "Failed to delete task");
+        return;
+    }
+    updateDashboard(data);
+    loadTasks();
+}
+
+async function completeTask(taskId) {
+    const res = await fetch(`/tasks/${taskId}/complete`, { method: "PUT" });
+    const data = await res.json();
+    if (!res.ok) {
+        alert(data.error || "Failed to complete task");
         return;
     }
     updateDashboard(data);

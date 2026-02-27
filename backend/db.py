@@ -133,3 +133,18 @@ def delete_task(task_id):
     cursor.close()
     conn.close()
     return deleted
+
+
+def update_task_status(task_id, status):
+    conn = get_connection()
+    if conn is None:
+        return False
+
+    cursor = conn.cursor()
+    query = "UPDATE tasks SET status = %s WHERE id = %s"
+    cursor.execute(query, (status, task_id))
+    updated = cursor.rowcount > 0
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return updated
