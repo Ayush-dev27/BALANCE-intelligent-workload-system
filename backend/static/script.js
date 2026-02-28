@@ -113,6 +113,7 @@ let difficultyChart;
 let priorityChart;
 let statusChart;
 
+console.log("Analytics called");
 function loadAnalytics() {
     fetch("/analytics")
         .then(response => response.json())
