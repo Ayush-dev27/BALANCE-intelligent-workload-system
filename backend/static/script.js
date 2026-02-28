@@ -109,29 +109,23 @@ function loadTasks() {
         });
 }
 
-let difficultyChartInstance = null;
-let priorityChartInstance = null;
-let statusChartInstance = null;
+let difficultyChart;
+let priorityChart;
+let statusChart;
 
 function loadAnalytics() {
     fetch("/analytics")
         .then(response => response.json())
         .then(data => {
+            if (difficultyChart) difficultyChart.destroy();
+            if (priorityChart) priorityChart.destroy();
+            if (statusChart) statusChart.destroy();
+
             const difficultyCtx = document.getElementById("difficultyChart").getContext("2d");
             const priorityCtx = document.getElementById("priorityChart").getContext("2d");
             const statusCtx = document.getElementById("statusChart").getContext("2d");
 
-            if (difficultyChartInstance) {
-                difficultyChartInstance.destroy();
-            }
-            if (priorityChartInstance) {
-                priorityChartInstance.destroy();
-            }
-            if (statusChartInstance) {
-                statusChartInstance.destroy();
-            }
-
-            difficultyChartInstance = new Chart(difficultyCtx, {
+            difficultyChart = new Chart(difficultyCtx, {
                 type: "bar",
                 data: {
                     labels: ["1", "2", "3", "4", "5"],
@@ -169,7 +163,7 @@ function loadAnalytics() {
                 "rgba(220, 53, 69, 0.7)",
             ];
 
-            priorityChartInstance = new Chart(priorityCtx, {
+            priorityChart = new Chart(priorityCtx, {
                 type: "pie",
                 data: {
                     labels: ["Priority 1", "Priority 2", "Priority 3+"],
@@ -200,7 +194,7 @@ function loadAnalytics() {
                 "rgba(220, 53, 69, 0.7)",  // overdue
             ];
 
-            statusChartInstance = new Chart(statusCtx, {
+            statusChart = new Chart(statusCtx, {
                 type: "doughnut",
                 data: {
                     labels: ["Pending", "Completed", "Overdue"],
