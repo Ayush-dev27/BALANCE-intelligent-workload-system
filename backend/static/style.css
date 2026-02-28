@@ -219,5 +219,7 @@ button:hover {
 }
 
 .chart-container {
-    min-height: 220px;
+    position: relative;
+    height: 300px;
+    width: 100%;
 }
