@@ -121,11 +121,13 @@ function loadAnalytics() {
             if (priorityChart) priorityChart.destroy();
             if (statusChart) statusChart.destroy();
 
-            const difficultyCtx = document.getElementById("difficultyChart").getContext("2d");
-            const priorityCtx = document.getElementById("priorityChart").getContext("2d");
-            const statusCtx = document.getElementById("statusChart").getContext("2d");
+            // Reuse only the canvas elements defined in index.html; do not create or append any.
+            const difficultyCanvas = document.getElementById("difficultyChart");
+            const priorityCanvas = document.getElementById("priorityChart");
+            const statusCanvas = document.getElementById("statusChart");
+            if (!difficultyCanvas || !priorityCanvas || !statusCanvas) return;
 
-            difficultyChart = new Chart(difficultyCtx, {
+            difficultyChart = new Chart(difficultyCanvas, {
                 type: "bar",
                 data: {
                     labels: ["1", "2", "3", "4", "5"],
@@ -163,7 +165,7 @@ function loadAnalytics() {
                 "rgba(220, 53, 69, 0.7)",
             ];
 
-            priorityChart = new Chart(priorityCtx, {
+            priorityChart = new Chart(priorityCanvas, {
                 type: "pie",
                 data: {
                     labels: ["Priority 1", "Priority 2", "Priority 3+"],
@@ -194,7 +196,7 @@ function loadAnalytics() {
                 "rgba(220, 53, 69, 0.7)",  // overdue
             ];
 
-            statusChart = new Chart(statusCtx, {
+            statusChart = new Chart(statusCanvas, {
                 type: "doughnut",
                 data: {
                     labels: ["Pending", "Completed", "Overdue"],
