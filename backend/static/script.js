@@ -112,10 +112,30 @@ function loadTasks() {
 let difficultyChart;
 let priorityChart;
 let statusChart;
+let analyticsMode = "daily";
 
-console.log("Analytics called");
+function setAnalyticsMode(mode) {
+    analyticsMode = mode === "weekly" ? "weekly" : "daily";
+
+    const dailyBtn = document.getElementById("analytics-toggle-daily");
+    const weeklyBtn = document.getElementById("analytics-toggle-weekly");
+
+    if (dailyBtn && weeklyBtn) {
+        dailyBtn.classList.remove("toggle-btn-active");
+        weeklyBtn.classList.remove("toggle-btn-active");
+
+        if (analyticsMode === "weekly") {
+            weeklyBtn.classList.add("toggle-btn-active");
+        } else {
+            dailyBtn.classList.add("toggle-btn-active");
+        }
+    }
+
+    loadAnalytics();
+}
+
 function loadAnalytics() {
-    fetch("/analytics")
+    fetch(`/analytics?mode=${analyticsMode}`)
         .then(response => response.json())
         .then(data => {
             if (difficultyChart) difficultyChart.destroy();

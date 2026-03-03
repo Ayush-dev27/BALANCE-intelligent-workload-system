@@ -77,7 +77,13 @@
         </table>
     </div>
 
-    <h2>Analytics</h2>
+    <div class="analytics-header">
+        <h2>Analytics</h2>
+        <div class="analytics-toggle">
+            <button id="analytics-toggle-daily" class="toggle-btn toggle-btn-active" onclick="setAnalyticsMode('daily')">Today</button>
+            <button id="analytics-toggle-weekly" class="toggle-btn" onclick="setAnalyticsMode('weekly')">This Week</button>
+        </div>
+    </div>
     <div class="card">
         <div class="analytics-grid">
             <div>

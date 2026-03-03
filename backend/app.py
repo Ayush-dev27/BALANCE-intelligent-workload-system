@@ -3,7 +3,7 @@ from backend.logic.fatigue import calculate_and_store_fatigue
 from backend.logic.recommendations import generate_recommendations 
 from flask import Flask, jsonify 
 from flask import request
-from datetime import date
+from datetime import date, timedelta
 
 app = Flask(__name__) 
 
@@ -120,6 +120,8 @@ def complete_task_route(task_id):
 def analytics():
     from backend.db import get_all_tasks
 
+    mode = request.args.get("mode", "daily")
+
     tasks = get_all_tasks()
     today = date.today()
 
@@ -127,10 +129,22 @@ def analytics():
     priority_distribution = {str(i): 0 for i in range(1, 4)}
     status_distribution = {"pending": 0, "completed": 0, "overdue": 0}
 
-    total_tasks = len(tasks)
+    # Scope of tasks for aggregation
+    if mode == "weekly":
+        window_start = today - timedelta(days=6)
+        tasks_scope = []
+        for t in tasks:
+            due_date = t.get("due_date")
+            if due_date is not None and hasattr(due_date, "toordinal") and window_start <= due_date <= today:
+                tasks_scope.append(t)
+    else:
+        # daily mode keeps existing behavior: consider all tasks
+        tasks_scope = tasks
+
+    total_tasks = len(tasks_scope)
     completed_tasks = 0
 
-    for t in tasks:
+    for t in tasks_scope:
         diff = str(t.get("difficulty") or "")
         if diff in difficulty_distribution:
             difficulty_distribution[diff] += 1
@@ -159,12 +173,37 @@ def analytics():
             # Treat non-completed, non-overdue (including in_progress) as pending bucket
             status_distribution["pending"] += 1
 
+    # Aggregate total planned hours per day
+    if mode == "weekly":
+        window_start = today - timedelta(days=6)
+        total_planned_hours_per_day = {
+            (window_start + timedelta(days=offset)).isoformat(): 0 for offset in range(7)
+        }
+        for t in tasks_scope:
+            due_date = t.get("due_date")
+            hours = t.get("planned_hours") or 0
+            if (
+                due_date is not None
+                and hasattr(due_date, "toordinal")
+                and window_start <= due_date <= today
+            ):
+                total_planned_hours_per_day[due_date.isoformat()] += hours
+    else:
+        key = today.isoformat()
+        total_planned_hours_per_day = {key: 0}
+        for t in tasks_scope:
+            due_date = t.get("due_date")
+            hours = t.get("planned_hours") or 0
+            if due_date is not None and hasattr(due_date, "toordinal") and due_date == today:
+                total_planned_hours_per_day[key] += hours
+
     return jsonify({
         "difficulty_distribution": difficulty_distribution,
         "priority_distribution": priority_distribution,
         "status_distribution": status_distribution,
         "total_tasks": total_tasks,
         "completed_tasks": completed_tasks,
+        "total_planned_hours_per_day": total_planned_hours_per_day,
     })
 
 

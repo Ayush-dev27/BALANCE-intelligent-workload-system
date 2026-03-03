@@ -223,3 +223,31 @@ button:hover {
     height: 300px;
     width: 100%;
 }
+
+.analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.analytics-toggle {
+    display: flex;
+    gap: 8px;
+}
+
+.toggle-btn {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid #007bff;
+    background-color: #ffffff;
+    color: #007bff;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.toggle-btn-active {
+    background-color: #007bff;
+    color: #ffffff;
+}
