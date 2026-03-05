@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - BALANCE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h2>Register</h2>
+        <input type="text" id="register-username" placeholder="Username" />
+        <input type="password" id="register-password" placeholder="Password" />
+        <button id="register-submit">Register</button>
+        <p>Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+        <p id="register-error" style="color: red;"></p>
+    </div>
+</div>
+
+<script>
+document.getElementById("register-submit").addEventListener("click", async function () {
+    const username = document.getElementById("register-username").value;
+    const password = document.getElementById("register-password").value;
+
+    if (!username || !password) {
+        document.getElementById("register-error").textContent = "Please enter username and password.";
+        return;
+    }
+
+    const res = await fetch("/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        document.getElementById("register-error").textContent = data.error || "Registration failed.";
+        return;
+    }
+
+    window.location.href = "/login";
+});
+</script>
+</body>
+</html>
+
