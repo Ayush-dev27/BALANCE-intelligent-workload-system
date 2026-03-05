@@ -32,7 +32,7 @@ def get_previous_fatigue(today):
     return result["fatigue_score"] if result else 0
 
 
-def get_task_load_and_penalties(today):
+def get_task_load_and_penalties(today, user_id=None):
     """
     Computes today's planned hours from tasks and
     fatigue penalties for overdue and near-deadline tasks.
@@ -45,15 +45,27 @@ def get_task_load_and_penalties(today):
     cursor = conn.cursor(dictionary=True)
 
     # Consider all non-completed tasks up to tomorrow
-    cursor.execute(
-        """
-        SELECT planned_hours, due_date, status
-        FROM tasks
-        WHERE status != 'completed'
-          AND due_date <= DATE_ADD(%s, INTERVAL 1 DAY)
-        """,
-        (today,)
-    )
+    if user_id is not None:
+        cursor.execute(
+            """
+            SELECT planned_hours, due_date, status
+            FROM tasks
+            WHERE status != 'completed'
+              AND due_date <= DATE_ADD(%s, INTERVAL 1 DAY)
+              AND user_id = %s
+            """,
+            (today, user_id),
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT planned_hours, due_date, status
+            FROM tasks
+            WHERE status != 'completed'
+              AND due_date <= DATE_ADD(%s, INTERVAL 1 DAY)
+            """,
+            (today,),
+        )
 
     rows = cursor.fetchall()
 
@@ -96,13 +108,15 @@ def determine_risk_level(score):
 # Core Fatigue Logic
 # ==============================
 
-def calculate_and_store_fatigue():
+def calculate_and_store_fatigue(user_id=None):
     """
     Calculates fatigue score for today and stores it.
     """
     today = date.today()
 
-    planned_hours, overdue_count, near_deadline_count = get_task_load_and_penalties(today)
+    planned_hours, overdue_count, near_deadline_count = get_task_load_and_penalties(
+        today, user_id=user_id
+    )
     previous_fatigue = get_previous_fatigue(today)
 
     load_ratio = planned_hours / BASE_DAILY_CAPACITY if BASE_DAILY_CAPACITY else 0

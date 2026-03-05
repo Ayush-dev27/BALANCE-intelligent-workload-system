@@ -273,6 +273,16 @@ fetch("/analyze")
         loadTasks();
     });
 
+async function logout() {
+    const res = await fetch("/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    });
+    if (res.ok) {
+        window.location.href = "/login";
+    }
+}
+
 async function addTask() {
     const name = document.getElementById("task-name").value;
     const hours = document.getElementById("task-hours").value;

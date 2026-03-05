@@ -2,10 +2,12 @@ from backend.logic.distributor import analyze_task_distribution
 from backend.logic.fatigue import calculate_and_store_fatigue
 from backend.logic.recommendations import generate_recommendations 
 from flask import Flask, jsonify 
-from flask import request
+from flask import request, session, redirect, url_for
 from datetime import date, timedelta
+from functools import wraps
 
 app = Flask(__name__) 
+app.config["SECRET_KEY"] = "change-this-secret-key"
 
 
 def run_daily_cycle():
@@ -31,9 +33,10 @@ from flask import Flask, jsonify
 from backend.logic.distributor import analyze_task_distribution
 from backend.logic.recommendations import generate_recommendations
 
-def run_balance_engine():
-    distribution = analyze_task_distribution()
-    fatigue_result = calculate_and_store_fatigue()
+
+def run_balance_engine(user_id=None):
+    distribution = analyze_task_distribution(user_id=user_id)
+    fatigue_result = calculate_and_store_fatigue(user_id=user_id)
 
     recommendations = generate_recommendations(
         distribution_data=distribution,
@@ -47,18 +50,34 @@ def run_balance_engine():
     } 
 from flask import render_template
 
+
+def login_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            return jsonify({"error": "Unauthorized"}), 401
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
 @app.route("/")
 def home():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
     return render_template("index.html") 
 
 
 @app.route("/analyze", methods=["GET"])
+@login_required
 def analyze():
-    result = run_balance_engine()
+    user_id = session["user_id"]
+    result = run_balance_engine(user_id=user_id)
     return jsonify(result)
 
 
 @app.route("/add-task", methods=["POST"])
+@login_required
 def add_task():
     data = request.json
 
@@ -71,15 +90,18 @@ def add_task():
     }
 
     from backend.db import add_task_to_db
-    add_task_to_db(task)
+    user_id = session["user_id"]
+    add_task_to_db(task, user_id)
 
     return {"message": "Task added successfully"}, 201
 
 
 @app.route("/tasks", methods=["GET"])
+@login_required
 def list_tasks():
     from backend.db import get_all_tasks
-    tasks = get_all_tasks()
+    user_id = session["user_id"]
+    tasks = get_all_tasks(user_id=user_id)
     for t in tasks:
         if t.get("due_date"):
             t["due_date"] = t["due_date"].isoformat() 
@@ -87,12 +109,14 @@ def list_tasks():
 
 
 @app.route("/tasks/<int:task_id>", methods=["DELETE"])
+@login_required
 def delete_task_route(task_id):
     from backend.db import delete_task
-    deleted = delete_task(task_id)
+    user_id = session["user_id"]
+    deleted = delete_task(task_id, user_id=user_id)
     if not deleted:
         return jsonify({"error": "Task not found"}), 404
-    result = run_balance_engine()
+    result = run_balance_engine(user_id=user_id)
     return jsonify({
         "message": "Task deleted",
         "distribution": result["distribution"],
@@ -102,12 +126,14 @@ def delete_task_route(task_id):
 
 
 @app.route("/tasks/<int:task_id>/complete", methods=["PUT"])
+@login_required
 def complete_task_route(task_id):
     from backend.db import update_task_status
-    updated = update_task_status(task_id, "completed")
+    user_id = session["user_id"]
+    updated = update_task_status(task_id, "completed", user_id=user_id)
     if not updated:
         return jsonify({"error": "Task not found"}), 404
-    result = run_balance_engine()
+    result = run_balance_engine(user_id=user_id)
     return jsonify({
         "message": "Task completed",
         "distribution": result["distribution"],
@@ -117,12 +143,14 @@ def complete_task_route(task_id):
 
 
 @app.route("/analytics", methods=["GET"])
+@login_required
 def analytics():
     from backend.db import get_all_tasks
 
     mode = request.args.get("mode", "daily")
 
-    tasks = get_all_tasks()
+    user_id = session["user_id"]
+    tasks = get_all_tasks(user_id=user_id)
     today = date.today()
 
     difficulty_distribution = {str(i): 0 for i in range(1, 6)}
@@ -205,6 +233,64 @@ def analytics():
         "completed_tasks": completed_tasks,
         "total_planned_hours_per_day": total_planned_hours_per_day,
     })
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    from backend.db import create_user, get_user_by_username
+    from werkzeug.security import generate_password_hash
+
+    if request.method == "GET":
+        return render_template("register.html")
+
+    data = request.get_json() or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+
+    existing = get_user_by_username(username)
+    if existing:
+        return jsonify({"error": "Username already taken"}), 400
+
+    password_hash = generate_password_hash(password)
+    created = create_user(username, password_hash)
+    if not created:
+        return jsonify({"error": "Failed to create user"}), 500
+
+    return jsonify({"message": "User registered successfully"}), 201
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    from backend.db import get_user_by_username
+    from werkzeug.security import check_password_hash
+
+    if request.method == "GET":
+        return render_template("login.html")
+
+    data = request.get_json() or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+
+    user = get_user_by_username(username)
+    if not user or not check_password_hash(user["password_hash"], password):
+        return jsonify({"error": "Invalid username or password"}), 401
+
+    session["user_id"] = user["id"]
+    session["username"] = user["username"]
+
+    return jsonify({"message": "Login successful"}), 200
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"message": "Logged out"}), 200
 
 
 if __name__ == "__main__":

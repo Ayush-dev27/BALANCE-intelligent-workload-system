@@ -2,6 +2,12 @@
 -- BALANCE Database Schema
 -- =========================
 
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL
+);
+
 CREATE TABLE tasks (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -9,7 +15,9 @@ CREATE TABLE tasks (
     difficulty INT CHECK (difficulty BETWEEN 1 AND 5),
     priority INT CHECK (priority BETWEEN 1 AND 5),
     status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
-    created_at DATE DEFAULT CURRENT_DATE
+    created_at DATE DEFAULT CURRENT_DATE,
+    user_id INT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE daily_workload (
