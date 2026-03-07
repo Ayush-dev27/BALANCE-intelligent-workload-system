@@ -2,117 +2,182 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BALANCE Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-<div class="card">
-    <h2>Add Task</h2>
+<header class="app-header">
+    <a href="/" class="logo">BALANCE</a>
+    <nav class="header-nav">
+        <a href="#" class="nav-link nav-link-active">Dashboard</a>
+        <a href="#analytics-section" class="nav-link">Analytics</a>
+        <button type="button" class="btn-logout" onclick="logout()">Logout</button>
+    </nav>
+</header>
 
-    <input type="text" id="task-name" placeholder="Task name" />
-    <input type="number" id="task-hours" placeholder="Estimated hours" min="0" step="0.5" />
-    
-    <select id="task-difficulty">
-        <option value="1">Difficulty 1</option>
-        <option value="2">Difficulty 2</option>
-        <option value="3">Difficulty 3</option>
-        <option value="4">Difficulty 4</option>
-        <option value="5">Difficulty 5</option>
-    </select>
+<main class="app-main">
+    <div class="container">
 
-    <select id="task-priority">
-        <option value="1">Priority 1</option>
-        <option value="2">Priority 2</option>
-        <option value="3">Priority 3</option>
-        <option value="4">Priority 4</option>
-        <option value="5">Priority 5</option>
-    </select>
-
-    <button onclick="addTask()">Add Task</button>
-</div> 
-
-
-<div class="container">
-    <div class="dashboard-header">
-        <h1>BALANCE Dashboard</h1>
-        <button class="btn-logout" onclick="logout()">Logout</button>
-    </div>
-
-    <div class="card">
-        <p><strong>Date:</strong> <span id="date"></span></p>
-        <p><strong>Planned Hours:</strong> <span id="planned"></span></p>
-        <p><strong>Adjusted Capacity:</strong> <span id="capacity"></span></p>
-        <p>
-    <strong>Status:</strong>
-    <span id="status" class="status-badge"></span>
-</p> 
-
-        <p><strong>Fatigue Score:</strong></p>
-        <div class="fatigue-bar">
-            <div id="fatigue-fill"></div>
-        </div>
-        <div class="fatigue-info">
-    <span id="fatigue"></span>
-    <span id="fatigue-label" class="fatigue-label"></span>
-</div> 
-    </div>
-
-    <h2>Recommendations</h2>
-    <div id="recommendations" class="recommendations"></div>
-
-    <h2>Task List</h2>
-    <div class="card">
-        <table class="task-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Hours</th>
-                    <th>Difficulty</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Due Date</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="task-list-body">
-            </tbody>
-        </table>
-    </div>
-
-    <div class="analytics-header">
-        <h2>Analytics</h2>
-        <div class="analytics-toggle">
-            <button id="analytics-toggle-daily" class="toggle-btn toggle-btn-active" onclick="setAnalyticsMode('daily')">Today</button>
-            <button id="analytics-toggle-weekly" class="toggle-btn" onclick="setAnalyticsMode('weekly')">This Week</button>
-        </div>
-    </div>
-    <div class="card">
-        <div class="analytics-grid">
-            <div>
-                <h3>Difficulty Distribution</h3>
-                <div class="chart-container">
-                    <canvas id="difficultyChart"></canvas>
+        <!-- Add Task -->
+        <section class="section-add-task">
+            <div class="card card-add-task">
+                <h2 class="section-title">Add Task</h2>
+                <div class="add-task-form">
+                    <input type="text" id="task-name" placeholder="Task name" />
+                    <input type="number" id="task-hours" placeholder="Estimated hours" min="0" step="0.5" />
+                    <select id="task-difficulty">
+                        <option value="1">Difficulty 1</option>
+                        <option value="2">Difficulty 2</option>
+                        <option value="3">Difficulty 3</option>
+                        <option value="4">Difficulty 4</option>
+                        <option value="5">Difficulty 5</option>
+                    </select>
+                    <select id="task-priority">
+                        <option value="1">Priority 1</option>
+                        <option value="2">Priority 2</option>
+                        <option value="3">Priority 3</option>
+                        <option value="4">Priority 4</option>
+                        <option value="5">Priority 5</option>
+                    </select>
+                    <button class="btn-primary" onclick="addTask()">Add Task</button>
                 </div>
             </div>
-            <div>
-                <h3>Priority Distribution</h3>
-                <div class="chart-container">
-                    <canvas id="priorityChart"></canvas>
+        </section>
+
+        <!-- Metrics Section -->
+        <section class="metrics-section">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="metric-label">Total Tasks</span>
+                    <span id="metric-total-tasks" class="metric-value">—</span>
+                </div>
+                <div class="metric-card metric-card-fatigue">
+                    <span class="metric-label">Fatigue Score</span>
+                    <span id="fatigue" class="metric-value">0</span>
+                    <div class="fatigue-bar">
+                        <div id="fatigue-fill"></div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Burnout Risk</span>
+                    <span id="fatigue-label" class="metric-value fatigue-label">—</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Completed Tasks</span>
+                    <span id="metric-completed-tasks" class="metric-value">—</span>
                 </div>
             </div>
-            <div>
-                <h3>Task Status Distribution</h3>
-                <div class="chart-container">
-                    <canvas id="statusChart"></canvas>
+        </section>
+
+        <!-- Dashboard Overview (required by script.js) -->
+        <section class="section-overview">
+            <div class="card card-overview">
+                <div class="overview-grid">
+                    <div class="overview-item">
+                        <span class="overview-label">Date</span>
+                        <span id="date" class="overview-value"></span>
+                    </div>
+                    <div class="overview-item">
+                        <span class="overview-label">Planned Hours</span>
+                        <span id="planned" class="overview-value"></span>
+                    </div>
+                    <div class="overview-item">
+                        <span class="overview-label">Adjusted Capacity</span>
+                        <span id="capacity" class="overview-value"></span>
+                    </div>
+                    <div class="overview-item">
+                        <span class="overview-label">Status</span>
+                        <span id="status" class="status-badge"></span>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
+
+        <!-- Recommendations -->
+        <section class="section-recommendations">
+            <h2 class="section-title">Recommendations</h2>
+            <div id="recommendations" class="recommendations"></div>
+        </section>
+
+        <!-- Task Manager -->
+        <section class="section-task-manager">
+            <h2 class="section-title">Task Manager</h2>
+            <div class="card card-table">
+                <table class="task-table">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Estimated Hours</th>
+                            <th>Difficulty</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Due Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="task-list-body">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analytics-section" class="section-analytics">
+            <div class="analytics-header">
+                <h2 class="section-title">Analytics</h2>
+                <div class="analytics-toggle">
+                    <button type="button" id="analytics-toggle-daily" class="toggle-btn toggle-btn-active" onclick="setAnalyticsMode('daily')">Today</button>
+                    <button type="button" id="analytics-toggle-weekly" class="toggle-btn" onclick="setAnalyticsMode('weekly')">This Week</button>
+                </div>
+            </div>
+            <div class="analytics-grid">
+                <div class="card chart-card">
+                    <h3 class="chart-title">Difficulty Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="difficultyChart"></canvas>
+                    </div>
+                </div>
+                <div class="card chart-card">
+                    <h3 class="chart-title">Priority Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="priorityChart"></canvas>
+                    </div>
+                </div>
+                <div class="card chart-card">
+                    <h3 class="chart-title">Task Status Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </div>
-</div>
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='script.js') }}"></script>
+<script>
+(function() {
+    function updateMetricCards() {
+        fetch("/analytics?mode=daily")
+            .then(r => r.json())
+            .then(data => {
+                var el = document.getElementById("metric-total-tasks");
+                if (el) el.textContent = data.total_tasks != null ? data.total_tasks : "—";
+                el = document.getElementById("metric-completed-tasks");
+                if (el) el.textContent = data.completed_tasks != null ? data.completed_tasks : "—";
+            })
+            .catch(function() {});
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(updateMetricCards, 600);
+        setInterval(updateMetricCards, 10000);
+    });
+})();
+</script>
 
 </body>
-</html> 
+</html>
