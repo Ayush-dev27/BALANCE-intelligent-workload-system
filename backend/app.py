@@ -59,7 +59,49 @@ def login_required(fn):
         return fn(*args, **kwargs)
 
     return wrapper
+# --- ADD THIS SECTION ---
+def init_db():
+    from backend.db import get_db_connection # Assuming this helper exists in your db.py
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Create Users Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(80) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL
+        );
+    """)
+    
+    # Create Tasks Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            name VARCHAR(200) NOT NULL,
+            estimated_hours FLOAT,
+            planned_hours FLOAT,
+            difficulty INT,
+            priority INT,
+            status VARCHAR(50) DEFAULT 'pending',
+            due_date DATE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+    """)
+    conn.commit()
+    cursor.close()
+    conn.close()
 
+# Run the initialization
+with app.app_context():
+    try:
+        init_db()
+        print("Database initialized successfully!")
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+# ------------------------ 
 
 @app.route("/")
 def home():
