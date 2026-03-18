@@ -1,15 +1,17 @@
 import mysql.connector
 from mysql.connector import Error
+import os
 
 def get_connection():
     try:
         connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="AIWEEB",
-            database="balance"
-        )
-        return connection
+            host=os.getenv("MYSQLHOST"),
+            user=os.getenv("MYSQLUSER"),
+            password=os.getenv("MYSQLPASSWORD"),
+            database=os.getenv("MYSQLDATABASE"),
+            port=os.getenv("MYSQLPORT")
+        ) 
+        return connection 
     except Error as e:
         print("Database connection failed:", e)
         return None 

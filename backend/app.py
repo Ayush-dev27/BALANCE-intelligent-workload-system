@@ -61,8 +61,8 @@ def login_required(fn):
     return wrapper
 # --- ADD THIS SECTION ---
 def init_db():
-    from backend.db import get_db_connection # Assuming this helper exists in your db.py
-    conn = get_db_connection()
+    from backend.db import get_connection # Assuming this helper exists in your db.py
+    conn = get_connection() 
     cursor = conn.cursor()
     
     # Create Users Table
@@ -72,15 +72,14 @@ def init_db():
             username VARCHAR(80) UNIQUE NOT NULL,
             password_hash VARCHAR(255) NOT NULL
         );
-    """)
+    """) 
     
     # Create Tasks Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT,
-            name VARCHAR(200) NOT NULL,
-            estimated_hours FLOAT,
+            title VARCHAR(200) NOT NULL,
             planned_hours FLOAT,
             difficulty INT,
             priority INT,
@@ -90,7 +89,7 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
     """)
-    conn.commit()
+    conn.commit() 
     cursor.close()
     conn.close()
 
