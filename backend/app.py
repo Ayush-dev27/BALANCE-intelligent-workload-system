@@ -63,6 +63,9 @@ def login_required(fn):
 def init_db():
     from backend.db import get_connection # Assuming this helper exists in your db.py
     conn = get_connection() 
+    if conn is None:
+        print("CRITICAL: Could not connect to the database. Check your Render Environment Variables!")
+        return # Stop here so it doesn't try to call .cursor() and crash 
     cursor = conn.cursor()
     
     # Create Users Table
