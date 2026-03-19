@@ -69,6 +69,8 @@ def init_db():
     cursor = conn.cursor()
     
     # Create Users Table
+    cursor.execute("DROP TABLE IF EXISTS tasks;")
+    cursor.execute("DROP TABLE IF EXISTS users;") 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
