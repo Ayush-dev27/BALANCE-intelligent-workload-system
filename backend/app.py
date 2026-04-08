@@ -26,9 +26,6 @@ def run_daily_cycle():
     } 
 
 
-if __name__ == "__main__":
-    print(run_daily_cycle()) 
-
 from flask import Flask, jsonify
 from backend.logic.distributor import analyze_task_distribution
 from backend.logic.recommendations import generate_recommendations
@@ -96,14 +93,7 @@ def init_db():
     cursor.close()
     conn.close()
 
-# Run the initialization
-with app.app_context():
-    try:
-        init_db()
-        print("Database initialized successfully!")
-    except Exception as e:
-        print(f"Error initializing database: {e}")
-# ------------------------ 
+
 
 @app.route("/")
 def home():
@@ -339,3 +329,9 @@ def logout():
 
 if __name__ == "__main__":
     app.run(debug=True) 
+
+if __name__ == "__main__":
+    import os
+    # Use the port Render provides, or default to 10000
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port) 
